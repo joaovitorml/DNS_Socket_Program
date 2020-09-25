@@ -8,12 +8,6 @@
 #include <inttypes.h>
 #include <time.h>
 
-
-typedef struct {
-  int length;
-  char name[256];
-}query_t;
-
 typedef struct {
   uint16_t xid;      /* Randomly chosen identifier */
   uint16_t flags;    /* Bit-mask to indicate request/response */
