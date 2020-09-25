@@ -29,7 +29,8 @@ typedef struct {
   uint16_t class;
   uint32_t ttl;
   uint16_t length;
-  struct in_addr addr;
+  uint16_t preference;
+  char name[256] ;
 } __attribute__((packed)) dns_record_a_t;
 
 
@@ -61,7 +62,7 @@ int main(int argc, char **argv){
 
     /* Set up the DNS question */
     dns_question_t question;
-    question.dnstype = htons (1);  /* QTYPE 1=A, need to change type to MS */
+    question.dnstype = htons (15);  /* QTYPE 1=A,15 = MX */
     question.dnsclass = htons (1); /* QCLASS 1=IN */
 
     //Traverse through the name, looking for the . locations 
@@ -72,9 +73,7 @@ int main(int argc, char **argv){
     {
       if(argv[1][i] == '.' || i == argv1_len)
       {
-        // take the length of the substring before the dot
-        //array_name[i].length = char_count;
-        // set the '\0' char
+
         part_host_name[char_count] = 0;
         // set first position of the substring the length and add the substring
         array_name[i - char_count] = char_count;
@@ -157,7 +156,7 @@ int main(int argc, char **argv){
       printf ("CLASS: %" PRId16 "\n", ntohs (records[i].class));
       printf ("TTL: %" PRIx32 "\n", ntohl (records[i].ttl));
       //printf ("IPv4: %08" PRIx32 "\n", ntohl (records[i].addr));
-      //printf ("IPv4: %s\n", inet_ntoa (records[i].addr.s_addr));
+      printf ("IPv4: %s\n", records[i].name);
     }
     free(question.name);
     return 0;
