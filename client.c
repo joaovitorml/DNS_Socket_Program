@@ -7,6 +7,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include <time.h>
+#include <setjmp.h>
 
 typedef struct {
   uint16_t xid;      /* Randomly chosen identifier */
@@ -120,6 +121,7 @@ int main(int argc, char **argv){
             (socklen_t) sizeof (address));
 
 
+
     socklen_t length = 0;
     uint8_t response[512];
     memset (&response, 0, 512);
@@ -150,6 +152,14 @@ int main(int argc, char **argv){
     dns_record_a_t *records = (dns_record_a_t *) (field_length + 5);
     printf("%d\n",ntohs (response_header->ancount));
 
+    if((ntohs (response_header->ancount))==0){
+      if(1){
+        printf("Dominio %s não encontrado\n",argv[1]);
+      }
+      else if(0){
+        printf("Dominio %s não possui entrada MX\n",argv[1]);
+      }
+    }
     for (int i = 0; i < ntohs (response_header->ancount); i++)
     {
       printf ("TYPE: %" PRId16 "\n", ntohs (records[i].type));
