@@ -151,24 +151,12 @@ int main(int argc, char **argv){
     *field_length = '\0'; /* Null terminate the name */
     dns_record_a_t *records = (dns_record_a_t *) (field_length + 5);
     printf("%d\n",ntohs (response_header->ancount));
-
-    // inserting dots
-    int name_length = records[0].name[0],i = 1;
-    records[0].name[0] = ' ';
-    while(name_length){
-      name_length--;
-      i++;
-      if(!name_length)
-      { 
-        name_length = records[0].name[i];
-        // a non zero length means a dot
-        if (name_length) records[0].name[i++] = '.';
-      }
-    }
-
+    
+    free(question.name);
     if((ntohs (response_header->ancount))==0){
       if(1){
         printf("Dominio %s não encontrado\n",argv[1]);
+        return 0;
       }
       else if(0){
         printf("Dominio %s não possui entrada MX\n",argv[1]);
@@ -176,12 +164,24 @@ int main(int argc, char **argv){
     }
     for (int i = 0; i < ntohs (response_header->ancount); i++)
     {
+      // inserting dots
+      int name_length = records[i].name[0],j = 1;
+      records[i].name[0] = ' ';
+      while(name_length){
+        name_length--;
+        j++;
+        if(!name_length)
+        { 
+          name_length = records[i].name[j];
+          // a non zero length means a dot
+          if (name_length) records[i].name[j++] = '.';
+        }
+      }
       printf ("TYPE: %" PRId16 "\n", ntohs (records[i].type));
       printf ("CLASS: %" PRId16 "\n", ntohs (records[i].class));
       printf ("TTL: %" PRIx32 "\n", ntohl (records[i].ttl));
       //printf ("IPv4: %08" PRIx32 "\n", ntohl (records[i].addr));
       printf ("IPv4: %s\n", records[i].name);
     }
-    free(question.name);
     return 0;
 }
