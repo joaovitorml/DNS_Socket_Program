@@ -7,7 +7,6 @@
 #include <string.h>
 #include <inttypes.h>
 #include <time.h>
-#include <setjmp.h>
 
 typedef struct {
   uint16_t xid;      /* Randomly chosen identifier */
@@ -30,8 +29,9 @@ typedef struct {
   uint16_t class;
   uint32_t ttl;
   uint16_t length;
+  //rdata
   uint16_t preference;
-  char name[256] ;
+  char name[256] ; //can store some junk
 } __attribute__((packed)) dns_record_a_t;
 
 
@@ -56,11 +56,14 @@ int main(int argc, char **argv){
     /* Set up the DNS header */
     dns_header_t header;
     memset (&header, 0, sizeof (dns_header_t)); /* set all the struct with zeroes */
-    header.xid= htons (xid);    /* Randomly chosen ID */
-    header.flags = htons (0x0100); /* Q=0, RD=1 */
-    header.qdcount = htons (1);    /* Sending 1 question */
-
-
+    header.xid= htons(xid);    /* Randomly chosen ID */
+    header.flags = htons(0x0100); /* Q=0, RD=1 */
+    header.qdcount = htons(1);    /* Sending 1 question */
+    //the three below set as zero
+    header.ancount = htons(0); 
+    header.nscount = htons(0);
+    header.arcount = htons(0); 
+    
     /* Set up the DNS question */
     dns_question_t question;
     question.dnstype = htons (15);  /* QTYPE 1=A,15 = MX */
@@ -116,24 +119,20 @@ int main(int argc, char **argv){
     p += sizeof (question.dnstype);
     memcpy (p, &question.dnsclass, sizeof (question.dnsclass));
 
-    /* Send the packet to OpenDNS, then request the response */
+    /* Send the packet to DNS, then request the response */
     sendto (socketfd, packet, packetlen, 0, (struct sockaddr *) &address, 
             (socklen_t) sizeof (address));
-
 
 
     socklen_t length = 0;
     uint8_t response[512];
     memset (&response, 0, 512);
 
-    printf("antes\n");
-    /* Receive the response from OpenDNS into a local buffer */
+    /* Receive the response from DNS into a local buffer */
     ssize_t bytes = recvfrom (socketfd, response, 512, 0,
                             (struct sockaddr *) &address, &length);
-    
-    printf("depois\n");
-    printf("Bytes: %ld\n",bytes);
-    printf("Response: %s\n", response);
+    //printf("Bytes: %ld\n",bytes);
+    //printf("Response: %s\n", response);
 
 
     dns_header_t *response_header = (dns_header_t *)response;
@@ -150,19 +149,22 @@ int main(int argc, char **argv){
     }
     *field_length = '\0'; /* Null terminate the name */
     dns_record_a_t *records = (dns_record_a_t *) (field_length + 5);
-    printf("%d\n",ntohs (response_header->ancount));
+    // printf("%d\n",ntohs (response_header->ancount));
     
     free(question.name);
+    
+    // exceptions
     if((ntohs (response_header->ancount))==0){
-      if(1){
-        printf("Dominio %s não encontrado\n",argv[1]);
-        return 0;
-      }
-      else if(0){
-        printf("Dominio %s não possui entrada MX\n",argv[1]);
-      }
+      printf("Dominio %s não encontrado\n",argv[1]);
+      return 0;
     }
-    for (int i = 0; i < ntohs (response_header->ancount); i++)
+    else if(!strlen(records[0].name))
+    {
+      printf("Dominio %s não possui entrada MX\n",argv[1]);
+      return 0;
+    }
+
+    for (int i = 0; i < 1/*ntohs (response_header->ancount)*/; i++)
     {
       // inserting dots
       int name_length = records[i].name[0],j = 1;
@@ -177,11 +179,12 @@ int main(int argc, char **argv){
           if (name_length) records[i].name[j++] = '.';
         }
       }
+      /*
       printf ("TYPE: %" PRId16 "\n", ntohs (records[i].type));
       printf ("CLASS: %" PRId16 "\n", ntohs (records[i].class));
       printf ("TTL: %" PRIx32 "\n", ntohl (records[i].ttl));
-      //printf ("IPv4: %08" PRIx32 "\n", ntohl (records[i].addr));
-      printf ("IPv4: %s\n", records[i].name);
+      */
+      printf ("%s <>%s\n",argv[1], records[i].name);
     }
     return 0;
 }
