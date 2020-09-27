@@ -152,6 +152,20 @@ int main(int argc, char **argv){
     dns_record_a_t *records = (dns_record_a_t *) (field_length + 5);
     printf("%d\n",ntohs (response_header->ancount));
 
+    // inserting dots
+    int name_length = records[0].name[0],i = 1;
+    records[0].name[0] = ' ';
+    while(name_length){
+      name_length--;
+      i++;
+      if(!name_length)
+      { 
+        name_length = records[0].name[i];
+        // a non zero length means a dot
+        if (name_length) records[0].name[i++] = '.';
+      }
+    }
+
     if((ntohs (response_header->ancount))==0){
       if(1){
         printf("Dominio %s não encontrado\n",argv[1]);
