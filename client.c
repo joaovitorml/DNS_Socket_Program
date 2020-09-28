@@ -119,20 +119,29 @@ int main(int argc, char **argv){
     p += sizeof (question.dnstype);
     memcpy (p, &question.dnsclass, sizeof (question.dnsclass));
 
-    /* Send the packet to DNS, then request the response */
-    sendto (socketfd, packet, packetlen, 0, (struct sockaddr *) &address, 
-            (socklen_t) sizeof (address));
-
-
     socklen_t length = 0;
     uint8_t response[512];
+    int try_count = 0;
+    ssize_t bytes = -1; // used to 
     memset (&response, 0, 512);
-
-    /* Receive the response from DNS into a local buffer */
-    ssize_t bytes = recvfrom (socketfd, response, 512, 0,
-                            (struct sockaddr *) &address, &length);
-    //printf("Bytes: %ld\n",bytes);
-    //printf("Response: %s\n", response);
+    /* Send the packet to DNS, then request the response */
+    do
+    {
+      sendto (socketfd, packet, packetlen, 0, (struct sockaddr *) &address, 
+              (socklen_t) sizeof (address));
+      sleep(2);
+      /* Receive the response from DNS into a local buffer and don't block response */
+      bytes = recvfrom (socketfd, response, 512, MSG_DONTWAIT,
+                          (struct sockaddr *) &address, &length);
+      try_count++;
+      if(try_count>=3 && bytes == -1)
+      {
+        printf("Nao foi possível coletar entrada MX para %s\n",argv[1]);
+        return 0;
+      }
+    }while(bytes == -1);
+    printf("Bytes: %ld\n",bytes);
+    printf("Response: %s\n", response);
 
 
     dns_header_t *response_header = (dns_header_t *)response;
@@ -158,11 +167,9 @@ int main(int argc, char **argv){
       printf("Dominio %s não encontrado\n",argv[1]);
       return 0;
     }
-    else if(!strlen(records[0].name))
-    {
-      printf("Dominio %s não possui entrada MX\n",argv[1]);
-      return 0;
-    }
+
+    //printf("Dominio %s não possui entrada MX\n",argv[1]);
+
 
     for (int i = 0; i < 1/*ntohs (response_header->ancount)*/; i++)
     {
