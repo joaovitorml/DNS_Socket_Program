@@ -59,7 +59,7 @@ int main(int argc, char **argv){
     header.xid= htons(xid);    /* Randomly chosen ID */
     header.flags = htons(0x0100); /* Q=0, RD=1 */
     header.qdcount = htons(1);    /* Sending 1 question */
-    //the three below set as zero
+    //the three below set as zero 
     header.ancount = htons(0); 
     header.nscount = htons(0);
     header.arcount = htons(0); 
@@ -113,8 +113,8 @@ int main(int argc, char **argv){
     p += sizeof (header);
 
     /* Copy the question name, QTYPE, and QCLASS fields */
-    memcpy (p, question.name, argv1_len + 2);
-    p += argv1_len + 2;
+    memcpy (p, question.name, argv1_len + dot_count);
+    p += argv1_len + dot_count;
     memcpy (p, &question.dnstype, sizeof (question.dnstype));
     p += sizeof (question.dnstype);
     memcpy (p, &question.dnsclass, sizeof (question.dnsclass));
@@ -140,8 +140,8 @@ int main(int argc, char **argv){
         return 0;
       }
     }while(bytes == -1);
-    printf("Bytes: %ld\n",bytes);
-    printf("Response: %s\n", response);
+    //printf("Bytes: %ld\n",bytes);
+    //printf("Response: %s\n", response);
 
 
     dns_header_t *response_header = (dns_header_t *)response;
