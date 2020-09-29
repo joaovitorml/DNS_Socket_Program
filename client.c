@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <netinet/in.h>
-#include <netdb.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
@@ -124,6 +123,7 @@ int main(int argc, char **argv){
     int try_count = 0;
     ssize_t bytes = -1; // used to 
     memset (&response, 0, 512);
+    free(question.name);
     /* Send the packet to DNS, then request the response */
     do
     {
@@ -160,16 +160,19 @@ int main(int argc, char **argv){
     dns_record_a_t *records = (dns_record_a_t *) (field_length + 5);
     // printf("%d\n",ntohs (response_header->ancount));
     
-    free(question.name);
-    
     // exceptions
-    if((ntohs (response_header->ancount))==0){
+    uint16_t flags = ntohs(response_header->flags);
+    // 4 less significant bits are the RCODE
+    if( (flags & 15) == 3 // no such name
+        || (flags & 15) == 1) // format error
+    {
       printf("Dominio %s não encontrado\n",argv[1]);
       return 0;
     }
-
-    //printf("Dominio %s não possui entrada MX\n",argv[1]);
-
+    if((ntohs (response_header->ancount))==0){
+      printf("Dominio %s não possui entrada MX\n",argv[1]);
+      return 0;
+    }
 
     for (int i = 0; i < 1/*ntohs (response_header->ancount)*/; i++)
     {
