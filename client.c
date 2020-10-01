@@ -39,6 +39,12 @@ typedef struct {
   argv[2] = DNS IP
 */
 int main(int argc, char **argv){
+
+    if(argc < 3){
+      printf("programa iniciado sem as entradas necessárias\n");
+      return 0;
+    }
+
     srand(time(NULL));
     int socketfd = socket (AF_INET, SOCK_DGRAM, 0),
       xid = rand()%256, argv1_len = strlen(argv[1]);
